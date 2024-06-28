@@ -6,58 +6,58 @@ import Logo from "../assets/logo.svg";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { loginRoute } from '../utils/ApiRoutes.js';
+import { loginRoute } from "../utils/ApiRoutes.js";
 export default function Login() {
   const navigate = useNavigate();
-  const [values, setValues]= useState({
+  const [values, setValues] = useState({
     username: "",
     password: "",
-  })
+  });
   const toastOptions = {
     position: "bottom-right",
     autoClose: 8000,
     pauseOnHover: true,
     draggable: true,
     theme: "dark",
-  }
-  useEffect(()=>{
-    if(localStorage.getItem('import.meta.env.VITE_APP_LOCALHOST_KEY')){
-      navigate("/")
+  };
+  useEffect(() => {
+    if (localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)) {
+      navigate("/");
     }
-  }, [])
+  }, [navigate]);
 
   const handleChange = (event) => {
     setValues({ ...values, [event.target.name]: event.target.value });
   };
 
-  const validateForm = () =>{
-    const { username, password} = values;
-    if (username === ""){
-      toast.error("Email and Password is required.", toastOptions);
-      return false;
-    } else if (password === ""){
-      toast.error("Email and Password is required.", toastOptions);
+  const validateForm = () => {
+    const { username, password } = values;
+    if (username === ""|| password === "") {
+      toast.error("Email and Password are required.", toastOptions);
       return false;
     }
     return true;
-  }
+  };
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (validateForm()) {
-      const { username, password } = values;
-      const { data } = await axios.post(loginRoute, {
-        username,
-        password,
-      })
-      if (data.status === false) {
-        toast.error(data.msg, toastOptions);
-      }
-      if (data.status === true) {
-        localStorage.setItem(
-          'import.meta.env.VITE_APP_LOCALHOST_KEY',
-          JSON.stringify(data.user)
-        );
-        navigate("/");
+      try {
+        const { username, password } = values;
+        const { data } = await axios.post(loginRoute, {
+          username,
+          password,
+        });
+        if (data.status === false) {
+          toast.error(data.msg, toastOptions);
+        } else if (data.status === true) {
+          localStorage.setItem(
+            import.meta.env.VITE_APP_LOCALHOST_KEY,
+            JSON.stringify(data.user)
+          );
+          navigate("/");
+        }
+      } catch (error) {
+        toast.error("Error logging in, Please try again.", toastOptions);
       }
     }
   };
@@ -73,13 +73,15 @@ export default function Login() {
             type="text"
             placeholder="Username"
             name="username"
-            onChange={(e) => handleChange(e)}
+            onChange={handleChange}
+            value={values.username}
           />
           <input
             type="password"
             placeholder="Password"
             name="password"
-            onChange={(e) => handleChange(e)}
+            onChange={handleChange}
+            value={values.password}
           />
           <button type="submit">Log In</button>
           <span>
@@ -157,5 +159,4 @@ const FormContainer = styled.div`
       font-weight: bold;
     }
   }
-
 `;

@@ -23,42 +23,73 @@ export default function SetAvatar() {
 
   useEffect(() => {
     const fetchedAvatars = async () => {
-      if (!localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY))
-        navigate("/login");
+      try {
+        if (!localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)) {
+          navigate("/login");
+          return;
+        }
+        const data = await axios.get(setAvatarRoute);
+        const user = JSON.parse(
+          localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)
+        );
+        if (data.status === 200) {
+          setIsLoading(false);
+        } else {
+          toast.error("Failed to fetch avatars", toastOptions);
+        }
+      } catch (error) {
+        console.error("Error fetching avatars:", error);
+        toast.error("Failed to fetch avatars", toastOptions);
+      }
     };
     fetchedAvatars();
   }, []);
   const setProfilePicture = async () => {
-    if (selectedAvatar === undefined) {
-      toast.error("Please select an avatar", toastOptions);
-    } else {
-      const user = await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY));
-      const { data } = await axios.post(`${setAvatarRoute}/${user._id}`, {
+    try {
+      if (selectedAvatar === undefined) {
+        toast.error("Please select an avatar", toastOptions);
+        return;
+      }
+      const user = await JSON.parse(
+        localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)
+      );
+      const data = await axios.post(`${setAvatarRoute}/${user._id}`, {
         image: avatars[selectedAvatar],
       });
-      console.log(data);
+
       if (data.isSet) {
         user.isAvatarImageSet = true;
         user.avatarImage = data.image;
-        localStorage.setItem(import.meta.env.VITE_APP_LOCALHOST_KEY, JSON.stringify(user));
+        localStorage.setItem(
+          import.meta.env.VITE_APP_LOCALHOST_KEY,
+          JSON.stringify(user)
+        );
         navigate("/");
       } else {
         toast.error("Error setting avatar, Please try again.", toastOptions);
       }
+    } catch (error) {
+      console.error("Error setting avatar:", error);
+      toast.error("Failed to set avatar", toastOptions);
     }
   };
   useEffect(() => {
     const fetchAvatars = async () => {
-      const data = [];
-      for (let i = 0; i < 4; i++) {
-        const image = await axios.get(
-          `${api}/${Math.round(Math.random() * 1000)}`
-        );
-        const buffer = new Buffer(image.data);
-        data.push(buffer.toString("base64"));
+      try {
+        const data = [];
+        for (let i = 0; i < 4; i++) {
+          const image = await axios.get(
+            `${api}/${Math.round(Math.random() * 1000)}`
+          );
+          const buffer = Buffer.from(image.data);
+          data.push(buffer.toString("base64"));
+        }
+        setAvatars(data);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching avatars:", error);
+        toast.error("Failed to fetch avatars", toastOptions);
       }
-      setAvatars(data);
-      setIsLoading(false);
     };
     fetchAvatars();
   }, []);
@@ -77,6 +108,7 @@ export default function SetAvatar() {
             {avatars.map((avatar, index) => {
               return (
                 <div
+                  key={avatar}
                   className={`avatar ${
                     selectedAvatar === index ? "selected" : ""
                   }`}

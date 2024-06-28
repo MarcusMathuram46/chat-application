@@ -27,7 +27,7 @@ export default function Register() {
     if(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)){
       navigate("/")
     }
-  }, [])
+  }, [navigate])
 
   const handleChange = (event) => {
     setValues({ ...values, [event.target.name]: event.target.value });
@@ -61,7 +61,8 @@ export default function Register() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (handleValidation()) {
-      const { email, username, password } = values;
+      try{
+        const { email, username, password } = values;
       const { data } = await axios.post(registerRoute, {
         username,
         email,
@@ -69,20 +70,22 @@ export default function Register() {
       })
       if (data.status === false) {
         toast.error(data.msg, toastOptions);
-      }
-      if (data.status === true) {
+      }else if (data.status === true) {
         localStorage.setItem(
           import.meta.env.VITE_APP_LOCALHOST_KEY,
           JSON.stringify(data.user)
         );
         navigate("/");
       }
+      }catch(error){
+        toast.error("An error occurred while registering, Please try again.", toastOptions);
+      }
     }
   };
   return (
     <>
       <FormContainer>
-        <form action="" onSubmit={(event) => handleSubmit(event)}>
+        <form action="" onSubmit={handleSubmit}>
           <div className="brand">
             <img src={Logo} alt="logo" />
             <h1>Rehoboth</h1>
@@ -91,25 +94,29 @@ export default function Register() {
             type="text"
             placeholder="Username"
             name="username"
-            onChange={(e) => handleChange(e)}
+            onChange={handleChange}
+            value={values.username}
           />
           <input
             type="email"
             placeholder="Email"
             name="email"
-            onChange={(e) => handleChange(e)}
+            onChange={handleChange}
+            value={values.email}
           />
           <input
             type="password"
             placeholder="Password"
             name="password"
-            onChange={(e) => handleChange(e)}
+            onChange={handleChange}
+            value={values.password}
           />
           <input
             type="password"
             placeholder="ConfirmPassword"
             name="confirmPassword"
-            onChange={(e) => handleChange(e)}
+            onChange={handleChange}
+            value={values.confirmPassword}
           />
           <button type="submit">Create User</button>
           <span>

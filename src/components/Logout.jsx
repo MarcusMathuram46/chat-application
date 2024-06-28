@@ -8,11 +8,21 @@ import axios from 'axios';
 export default function Logout() {
   const navigate = useNavigate();
   const handleClick = async()=>{
-    const id = await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)._id);
-    const data = await axios.get(`${logoutRoute}/${id}`);
-    if(data.status === 200){
-      localStorage.clear();
-      navigate("/login");
+    try{
+      const id = await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)._id);
+      const data = await axios.get(`${logoutRoute}/${id}`);
+      if (data.status === 200) {
+        localStorage.clear();
+        navigate("/login");
+      } else {
+        console.error("Logout request failed:", data);
+        // Handle failure scenario, if necessary
+      }
+      // if(data.status === 200){
+      //   localStorage.clear();
+      //   navigate("/login");
+    }catch(error){
+      console.error(error);
     }
   }
   return (

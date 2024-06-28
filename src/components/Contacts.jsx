@@ -8,9 +8,13 @@ export default function Contacts({ contacts, changeChat }) {
 
   useEffect(() => {
     const fetchContact=async()=>{
-      const data = await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY));
-    setCurrentUserName(data.username);
-    setCurrentUserImage(data.avatarImage);
+      try{
+        const data = await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY));
+        setCurrentUserName(data.username);
+        setCurrentUserImage(data.avatarImage);
+      }catch(error){
+        console.error(error);
+      }
     }
     fetchContact()
   }, []);
@@ -20,7 +24,7 @@ export default function Contacts({ contacts, changeChat }) {
   };
   return (
     <>
-      {currentUserImage && currentUserImage && (
+      {currentUserImage && (
         <Container>
           <div className="brand">
             <img src={Logo} alt="logo" />
@@ -39,7 +43,7 @@ export default function Contacts({ contacts, changeChat }) {
                   <div className="avatar">
                     <img
                       src={`data:image/svg+xml;base64,${contact.avatarImage}`}
-                      alt=""
+                      alt={`${contact.username}'s avatar`}
                     />
                   </div>
                   <div className="username">

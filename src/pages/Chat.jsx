@@ -1,65 +1,89 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { allUsersRoute, host } from "../utils/ApiRoutes";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import styled from "styled-components";
-import Contacts from './../components/Contacts';
+import Contacts from "../components/Contacts";
 import ChatContainer from "../components/ChatContainer";
-import Welcome from './../components/Welcome';
+import Welcome from "../components/Welcome";
 import axios from "axios";
 
 export default function Chat() {
   const navigate = useNavigate();
-  const socket = useRef();
+  const socket = useRef(null);
   const [contacts, setContacts] = useState([]);
   const [currentChat, setCurrentChat] = useState(undefined);
   const [currentUser, setCurrentUser] = useState(undefined);
-  useEffect( () => {
-    const fetchChat = async()=>{
-      if (!localStorage.getItem("import.meta.env.VITE_APP_LOCALHOST_KEY")) {
+  useEffect(() => {
+    const fetchChat = async () => {
+      try {
+        const userData = localStorage.getItem(
+          import.meta.env.VITE_APP_LOCALHOST_KEY
+        );
+        if (!userData) {
+          navigate("/login");
+        } else {
+          setCurrentUser(JSON.parse(userData));
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        // Handle error, e.g., redirect to login page or show an error message
         navigate("/login");
-      } else {
-        setCurrentUser(await JSON.parse(localStorage.getItem("import.meta.env.VITE_APP_LOCALHOST_KEY")));
       }
+      // if (!localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)) {
+      //   navigate("/login");
+      // } else {
+      //   setCurrentUser(await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)));
+      // }import ChatContainer from './../components/ChatContainer';
+
       fetchChat();
-    }
-  }, []);
-  useEffect(()=>{
-    if(currentUser){
+    };
+  }, [navigate]);
+  useEffect(() => {
+    if (currentUser) {
       socket.current = io(host);
       socket.current.emit("addUser", currentUser._id);
     }
-  },[currentUser])
-  useEffect(()=>{
-    const fetchedChat=async()=>{
-      if(currentUser){
-        if(currentUser.isAvatarImageSet){
-          const data = await axios.get(`${allUsersRoute}/${currentUser._id}`);
+  }, [currentUser]);
+  useEffect(() => {
+    const fetchedContacts = async () => {
+      if (currentUser) {
+        if (currentUser.isAvatarImageSet) {
+          const { data } = await axios.get(
+            `${allUsersRoute}/${currentUser._id}`
+          );
           setContacts(data.data);
-        }else{
+        } else {
           navigate("/setAvatar");
         }
       }
-      fetchedChat();
-    }
-  }, [currentUser])
-  const handleChatChange=(chat)=>{
+      // if(currentUser){
+      //   if(currentUser.isAvatarImageSet){
+      //     const data = await axios.get(`${allUsersRoute}/${currentUser._id}`);
+      //     setContacts(data.data);
+      //   }else{
+      //     navigate("/setAvatar");
+      //   }
+      // }
+    };
+    fetchedContacts();
+  }, [currentUser, navigate]);
+
+  const handleChatChange = (chat) => {
     setCurrentChat(chat);
-  }
-  return(
-    <>
+  };
+  return (
     <Container>
       <div className="container">
         <Contacts contacts={contacts} changeChat={handleChatChange} />
         {currentChat === undefined ? (
           <Welcome />
-        ):(
+        ) : (
           <ChatContainer currentChat={currentChat} socket={socket} />
         )}
       </div>
     </Container>
-  </>
-  )  
+  );
 }
 
 const Container = styled.div`

@@ -4,65 +4,103 @@ import Logout from "./Logout";
 import ChatInput from "./ChatInput";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { receiveMessageRoute, sendMessageRoute } from "../utils/ApiRoutes";
-export default function ChatContainer({ currentChat, socket}) {
+import { receiveMessageRoute, sendMessageRoute } from "../utils/ApiRoutes.js";
+export default function ChatContainer({ currentChat, socket }) {
   const [messages, setMessages] = useState([]);
   const scrollRef = useRef();
   const [arrivalMessage, setArrivalMessage] = useState(null);
 
-  useEffect(()=>{
-    const fetchChatContainer=async()=>{
-      const data = await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY))
-    const response = await axios.post(receiveMessageRoute, {
-      from: data._id,
-      to: currentChat._id,
-    })
-    setMessages(response.data)
-    }
-    fetchChatContainer()
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if(currentChat){
+        try {
+          const data = await JSON.parse(
+            localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)
+          );
+          const response = await axios.post(receiveMessageRoute, {
+            from: data._id,
+            to: currentChat._id,
+          });
+          setMessages(response.data);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    };
+    fetchMessages();
   }, [currentChat]);
 
-  useEffect(()=>{
-    const getCurrentChat = async()=>{
-      if(currentChat){
-        await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY))._id
-      }
+  useEffect(() => {
+    if (currentChat) {
+      JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY))._id;
     }
-    getCurrentChat()
-  }, [currentChat])
+  }, [currentChat]);
 
-  const handleSendMsg=async(msg)=>{
-    const data = await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY))
-    socket.current.emit("send-msg", {
-      to: currentChat._id,
-      from: data._id,
-      msg,
-    });
-    await axios.post(sendMessageRoute, {
-      from: data._id,
-      to: currentChat._id,
-      message: msg,
-    });
+  // useEffect(() => {
+  //   const getCurrentChat = async () => {
+  //     try {
+  //       if (currentChat) {
+  //         await JSON.parse(
+  //           localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)
+  //         )._id;
+  //       }
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+  //   getCurrentChat();
+  // }, [currentChat]);
 
-    const msgs =[...messages];
-    msgs.push({ fromSelf: true, message: msg})
-    setMessages(msgs)
-  }
+  const handleSendMsg = async (msg) => {
+    try {
+      const data = await JSON.parse(
+        localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)
+      );
+      socket.current.emit("send-msg", {
+        to: currentChat._id,
+        from: data._id,
+        msg,
+      });
+      await axios.post(sendMessageRoute, {
+        from: data._id,
+        to: currentChat._id,
+        message: msg,
+      });
+
+      const msgs = [...messages];
+      msgs.push({ fromSelf: true, message: msg });
+      setMessages(msgs);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   useEffect(() => {
     if (socket.current) {
-      socket.current.on("msg-recieve", (msg) => {
+      socket.current.on("msg-receive", (msg) => {
         setArrivalMessage({ fromSelf: false, message: msg });
       });
+      return()=>{
+        socket.current.off("msg-receive");
+      }
     }
-  }, []);
+  }, [socket]);
 
   useEffect(() => {
-    arrivalMessage && setMessages((prev) => [...prev, arrivalMessage]);
+    if (arrivalMessage) {
+      setMessages((prev) => [...prev, arrivalMessage]);
+    }
   }, [arrivalMessage]);
+
+  // useEffect(() => {
+  //   arrivalMessage && setMessages((prev) => [...prev, arrivalMessage]);
+  // }, [arrivalMessage]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+  if (!currentChat) {
+    return null;
+  }
   return (
     <Container>
       <div className="chat-header">

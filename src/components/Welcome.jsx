@@ -5,7 +5,20 @@ export default function Welcome() {
   const [userName, setUserName] = useState("");
   useEffect(()=>{
     const fetchWelcome = async()=>{
-      setUserName(await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)).username)
+      try {
+        const userData = localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY);
+        if (userData) {
+          const { username } = JSON.parse(userData);
+          setUserName(username);
+        } else {
+          console.error('User data not found in localStorage');
+          // Handle the case where user data is not found, e.g., redirect to login
+        }
+      } catch (error) {
+        console.error('Error fetching welcome data:', error);
+        // Handle the error, e.g., show an error message or retry fetching
+      }
+      // setUserName(await JSON.parse(localStorage.getItem(import.meta.env.VITE_APP_LOCALHOST_KEY)).username)
     }
     fetchWelcome();
   }, []);
